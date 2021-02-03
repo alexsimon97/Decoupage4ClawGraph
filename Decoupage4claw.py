@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+from operator import itemgetter
+
 
 DISPLAY_CONST = 0.2
 
@@ -7,7 +10,7 @@ DISPLAY_CONST = 0.2
 Asks the user to enter the number of intervals and then for each interval enter the beginning and the end of it
 An interval is a list of two values : its beginning and its end
 collection is the collection of all the intervals, it is a list of intervals
-'''
+
 def enter_values():
 	collection = []
 	nbInterval = int(input("Number of intervals : "))
@@ -20,7 +23,19 @@ def enter_values():
 		interval.append(end)
 		collection.append(interval)
 	return collection
-	
+'''	
+
+def read_values(endpoints):
+	collection = []
+	print(endpoints)
+	for i in range(1,len(endpoints)//2+1):
+		interval = []
+		begin = endpoints.index(i)
+		end = endpoints.index(i,begin+1)
+		interval.append(begin)
+		interval.append(end)
+		collection.append(interval)
+	return collection
 
 '''
 Plots the intervals in collection
@@ -101,7 +116,7 @@ def has_three_claw(interval,collection):
 	candidates = []
 	for i in range(len(collection)):
 		potentialInterval = collection[i]
-		if(potentialInterval[0] > second_interval[0] and potentialInterval[0] <= interval[1]):
+		if(potentialInterval[0] > second_interval[1] and potentialInterval[0] <= interval[1]):
 			candidates.append(potentialInterval)
 	
 	if not candidates:
@@ -177,11 +192,22 @@ def has_four_claw(interval,collection):
 Cuts the intervals right before the beginning breaker_interval and resumes them right before the end of third_interval
 '''
 def cut_first_time(collection):
+	memory = []
 	for interval in collection:
 		check, first_interval, second_interval, breaker_interval, third_interval , fourth_interval = has_four_claw(interval,collection)
+		
 		if(check==True):
-			cut_interval(interval,breaker_interval[0]-DISPLAY_CONST, third_interval[1]-DISPLAY_CONST)
-			
+			l = []
+			#l.append(check)
+			l.append(interval)
+			l.append(breaker_interval[0])
+			l.append(third_interval[1])
+			memory.append(l)
+		#	cut_interval(interval,breaker_interval[0]-DISPLAY_CONST, third_interval[1]-DISPLAY_CONST)
+	
+	for l in memory:
+		#if(l[0] == True):
+		cut_interval(l[0],l[1]-DISPLAY_CONST,l[2]-DISPLAY_CONST)
 		
 
 
@@ -216,44 +242,93 @@ It first looks for the corresponding interval in collection (the theory states i
 def rectify_cut(collection,first_interval,second_interval):
 	for interval in collection:
 		if(len(interval)>2):
+			
 			if(interval[2]==second_interval[0] and interval[3]==second_interval[1]):
+				#print(interval[2])
+				#print(interval[3])
 				interval[2] = first_interval[1]
 		
 	
 
 
 '''
-First plots the intervals entered by the user
-Then cuts the intervals and checks for all the fake-claws
+Cuts the intervals and checks for all the fake-claws
 If there are some, rectifies it and checks again
 If there are still some, the algorithm is wrong
-Finally, plots the intervals after cutting
 '''
-def main():
-	collection  = enter_values()
-	plot(collection)
+def can_be_cut(collection):
+	
 
 	cut_first_time(collection)
 	allIntervals = collect_all_intervals(collection)
 	check, first_interval, second_interval, third_interval = has_fake_claw(allIntervals)
-
-	if(check):
-		print("Problem")
+	#print(first_interval)
+	#print(second_interval)
+	#print(third_interval)
+	i=0
+	#Once an interval is rectified it cannot cause problem anymore, so we cannot rectify more times than the number of intervals in total
+	while(check and i<len(collection)):
+		#print("Problem")
 		rectify_cut(collection,first_interval, second_interval)
 		allIntervals = collect_all_intervals(collection)
-		check, first,second, third = has_fake_claw(allIntervals)
-		if(check):
+		check, first_interval, second_interval, third_interval = has_fake_claw(allIntervals)
+		
+		i = i+1
+		
+	
+	if(check):
 			print("Real Problem")
-			print(first)
-			print(second)
-			print(third)
+			print(first_interval)
+			print(second_interval)
+			print(third_interval)
 			
-		else:
-			print("Solved")
+			return False
+			
+		#else:
+			#print("Solved")
 
+	return True
+	
 
-	plot(collection)
-	plt.show()
+def output_equivalent_interval_graph(collection):
+	allIntervals = collect_all_intervals(collection)
+	
+	l = []
+	for i in range(len(allIntervals)): #IMPORTANT : WE CANNOT MERGE THE TWO FOR LOOPS AND WE NEED THE SORT TO BE IN PLACE
+		u = [i+1,allIntervals[i][0]]
+		l.append(u)
+		
+	for i in range(len(allIntervals)):
+		v = [i+1,allIntervals[i][1]]
+		l.append(v)
+	l.sort(key=lambda x: x[1])
+	lineToWrite = ""
+	for i in range(len(l)-1):
+		lineToWrite += str(l[i][0]) + " "
+	lineToWrite += str(l[len(l)-1][0]) + "\n"
+	return lineToWrite
+	
+	
+		
+
+	
+def main():
+	#collection  = enter_values()
+	file = open(sys.argv[1], "r")
+	fileToWriteIn = open("filesWithAllIntervalGraphs/IntervalGraphs12VerticesCUT.txt", "w")
+	for line in file:
+		endpoints = line.split()
+		endpoints = [ int(x) for x in endpoints ]
+		collection = read_values(endpoints)
+		#plot(collection)
+		#print(collection)
+		if(can_be_cut(collection)==False):
+			plot(collection)
+			plt.show()
+			break
+		fileToWriteIn.write(output_equivalent_interval_graph(collection))
+	#plot(collection)
+	#plt.show()
 
 if __name__ == "__main__":
 	main()
