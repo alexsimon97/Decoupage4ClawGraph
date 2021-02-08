@@ -27,7 +27,7 @@ def enter_values():
 
 def read_values(endpoints):
 	collection = []
-	print(endpoints)
+	#print(endpoints)
 	for i in range(1,len(endpoints)//2+1):
 		interval = []
 		begin = endpoints.index(i)
@@ -63,12 +63,20 @@ def plot(collection):
 Cuts an interval from cutBegin to cutEnd
 The cut interval is now a list a 4 values, its beginning, the beginning of the cut, the end of the cut and its end
 '''
-def cut_interval(interval,cutBegin,cutEnd):
+def cut_interval(interval, cutBegin, cutEnd, cut_at_first, resume_at_second):
 	
 	intervalEnd = interval[1]
-	interval[1] = cutBegin
-	interval.append(cutEnd)
+	
+	if(cutEnd<intervalEnd):
+		interval[1] = cutBegin
+		interval.append(cutEnd)
+		
+	else:
+		interval[1] = cut_at_first
+		interval.append(resume_at_second)
 	interval.append(intervalEnd)
+	
+	
 	#print(interval)
 	
 	
@@ -165,22 +173,24 @@ def has_four_claw(interval,collection):
 			
 	#if none exists then there was a 3-claw
 	if not candidates:
-		print("There is a 3-claw but not a 4-claw")
-		return False,[],[],[],[],[]
+		#print("There is a 3-claw but not a 4-claw")
+		third_interval = fourth_interval
+		#return False,[],[],[],[],[]
 		
 	#else, we choose the one whose end is minimal as it will force the considered interval to resume
-	third_interval = candidates[0]
-	for i in range(len(candidates)):
-		if(candidates[i][1] < third_interval[1]):
-			third_interval = candidates[i]
+	else:
+		third_interval = candidates[0]
+		for i in range(len(candidates)):
+			if(candidates[i][1] < third_interval[1]):
+				third_interval = candidates[i]
 			
 			
-	#We check if there is an interval between the third and the fourth: in this case there is a 5-claw
-	for i in range(len(collection)):
-		potentialInterval = collection[i]
-		if(potentialInterval[1] < fourth_interval[0] and potentialInterval[0] > third_interval[1]):
-			print("5-claw")
-			return False,[],[],[],[],[]
+		#We check if there is an interval between the third and the fourth: in this case there is a 5-claw
+		for i in range(len(collection)):
+			potentialInterval = collection[i]
+			if(potentialInterval[1] < fourth_interval[0] and potentialInterval[0] > third_interval[1]):
+				print("5-claw")
+				return False,[],[],[],[],[]
 		
 		
 	
@@ -200,14 +210,18 @@ def cut_first_time(collection):
 			l = []
 			#l.append(check)
 			l.append(interval)
+			
 			l.append(breaker_interval[0])
 			l.append(third_interval[1])
+			
+			l.append(first_interval[1])
+			l.append(second_interval[1])
 			memory.append(l)
 		#	cut_interval(interval,breaker_interval[0]-DISPLAY_CONST, third_interval[1]-DISPLAY_CONST)
 	
 	for l in memory:
 		#if(l[0] == True):
-		cut_interval(l[0],l[1]-DISPLAY_CONST,l[2]-DISPLAY_CONST)
+		cut_interval(l[0],l[1]-DISPLAY_CONST,l[2]-DISPLAY_CONST,l[3], l[4]-DISPLAY_CONST)
 		
 
 
@@ -324,9 +338,12 @@ def main():
 		#print(collection)
 		if(can_be_cut(collection)==False):
 			plot(collection)
+			print(endpoints)
 			plt.show()
 			break
 		#fileToWriteIn.write(output_equivalent_interval_graph(collection))
+		#plot(collection)
+		#plt.show()
 	#plot(collection)
 	#plt.show()
 
